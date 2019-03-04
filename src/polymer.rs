@@ -7,10 +7,13 @@ pub struct Polymer {
 }
 
 impl Polymer {
-    pub fn react(&mut self) {
+    // It takes the byte to start reading and returns the last byte it changed
+    // if it returns start, it means it didn't make any changes
+    pub fn react(&mut self, start: usize) -> usize {
         let mut i = 0;
         let max = self.data.len() - 2;
         let mut out = Vec::new();
+        let mut new_start = start;
         out.reserve(self.data.len());
         while i <= max {
             let c1 = self.data[i];
@@ -21,6 +24,7 @@ impl Polymer {
                     || c1.is_ascii_lowercase() && c2.is_ascii_uppercase())
             {
                 i += 2;
+                new_start = i;
                 break;
             } else {
                 out.push(c1);
@@ -33,6 +37,7 @@ impl Polymer {
             i += 1;
         }
         self.data = out;
+        new_start
     }
 }
 
@@ -41,10 +46,11 @@ fn test_react() {
     let mut data = Polymer {
         data: "dabAcCaCBAcCcaDA".into(),
     };
+    let mut start = 0;
     for stage in 1..5 {
         let show = String::from_utf8_lossy(&data.data);
-        println!("stage {}: {}", stage, show);
-        data.react();
+        println!("stage {} - start: {} data: {}", stage, start, show);
+        start = data.react(start);
     }
     assert_eq!(data.data, b"dabCBAcaDA".to_vec());
 }
