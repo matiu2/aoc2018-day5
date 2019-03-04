@@ -1,37 +1,50 @@
 /// A polymer is a string of letters
 /// If two letters, the same, but different case are next to each other they'll cancel each other out
 /// These reactions will continue again on the new resultant string until no more can be cancelled out
-use std::iter::Iterator;
 
 pub struct Polymer {
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
 impl Polymer {
-    pub fn react(&self) -> Polymer {
-        let data: String = self.data[0..].chars().step_by(2).zip(self.data[1..].chars().step_by(2))
-            .filter(|(a, b)| {
-                !((a.to_ascii_lowercase() == b.to_ascii_lowercase())
-                    && ((a.is_ascii_lowercase() && b.is_ascii_uppercase())
-                        || (a.is_ascii_uppercase() && b.is_ascii_lowercase())))
-            })
-            .flat_map(|(a, b)| vec![a, b])
-            .collect();
-        Polymer { data }
+    pub fn react(&mut self) {
+        let mut i = 0;
+        let max = self.data.len() - 2;
+        let mut out = Vec::new();
+        out.reserve(self.data.len());
+        while i <= max {
+            let c1 = self.data[i];
+            let c2 = self.data[i + 1];
+            // This pair self destructs..
+            if (c1.to_ascii_lowercase() == c2.to_ascii_lowercase())
+                && ((c1.is_ascii_uppercase() && c2.is_ascii_lowercase())
+                    || c1.is_ascii_lowercase() && c2.is_ascii_uppercase())
+            {
+                i += 2;
+                break;
+            } else {
+                out.push(c1);
+                i += 1
+            }
+        }
+        // If we found just one polymer, we just copy the rest of the string
+        while i < self.data.len() {
+            out.push(self.data[i]);
+            i += 1;
+        }
+        self.data = out;
     }
 }
 
 #[test]
 fn test_react() {
-    let stage1 = Polymer {
+    let mut data = Polymer {
         data: "dabAcCaCBAcCcaDA".into(),
     };
-    println!("stage 1: {}", stage1.data);
-    let stage2 = stage1.react();
-    println!("stage 2: {}", stage2.data);
-    let stage3 = stage2.react();
-    println!("stage 3: {}", stage3.data);
-    let stage4 = stage3.react();
-    println!("stage 4: {}", stage4.data);
-    assert_eq!(stage4.data, "dabCBAcaDA");
+    for stage in 1..5 {
+        let show = String::from_utf8_lossy(&data.data);
+        println!("stage {}: {}", stage, show);
+        data.react();
+    }
+    assert_eq!(data.data, b"dabCBAcaDA".to_vec());
 }
